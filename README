@@ -1,0 +1,3 @@
+sync lastfm loved tracks to a gonic playlist
+
+find /path/to/music -type f \( -name '*.mp3' -o -name '*.flac' \) | lastfm-to-gonic USER API_KEY >/path/to/gonic/playlist.m3u

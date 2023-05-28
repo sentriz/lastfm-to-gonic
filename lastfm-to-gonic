@@ -1,0 +1,43 @@
+#!/usr/bin/env fish
+
+if ! test (count $argv) -eq 2
+    echo 'usage: find /path/to/music -type f \( -name \'*.mp3\' -o -name \'*.flac\' \) | lastfm-to-gonic USER API_KEY >/path/to/gonic/playlist.m3u' >&2
+    exit 1
+end
+
+set user $argv[1]
+set api_key $argv[2]
+set per_page 100
+
+set buff (mktemp /tmp/gonic.XXXXXX)
+cat >$buff
+trap 'rm $buff >/dev/null' EXIT
+
+function req_page
+    curl -s "http://ws.audioscrobbler.com/2.0/" \
+        --data-urlencode "method=user.getlovedtracks" \
+        --data-urlencode "format=json" \
+        --data-urlencode "user=$user" \
+        --data-urlencode "api_key=$api_key" \
+        --data-urlencode "page=$argv[1]" \
+        --data-urlencode "limit=$per_page"
+end
+
+function req_all_pages
+    set page 1
+    while req_page $page | jq -e -r '.lovedtracks.track | .[] | "\(.artist.name)\t\(.name)"'
+        set page (math $page + 1)
+    end
+end
+
+function find_track_path
+    sed 's/[^[:alnum:]]/ /g' | unidecode | while read line
+        fzf -i --filter="$line" <$buff | head -n 1
+    end
+end
+
+
+printf '#GONIC-NAME:"lastfm favourites %s"\n' (date +'%Y.%m.%d')
+printf '#GONIC-COMMENT:""\n'
+printf '#GONIC-IS-PUBLIC:"false"\n'
+req_all_pages | find_track_path
