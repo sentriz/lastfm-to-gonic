@@ -10,8 +10,9 @@ VOLUME [ "/music", "/playlists" ]
 COPY <<EOF /entrypoint
 #!/bin/sh
 while true; do
+    printf "%s\\timporting\\n" "$(date)"
     find /music -type f \\( -name \'*.mp3\' -o -name \'*.flac\' \\) | /lastfm-to-gonic \$LFM_USER \$LFM_API_KEY >/playlists/lastfm.m3u
-    sleep 3600
+    sleep 7200
 done
 EOF
 
