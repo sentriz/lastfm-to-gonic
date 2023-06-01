@@ -1,12 +1,13 @@
 #!/usr/bin/env fish
 
-if ! test (count $argv) -eq 2
-    echo 'usage: find /path/to/music -type f \( -name \'*.mp3\' -o -name \'*.flac\' \) | lastfm-to-gonic USER API_KEY >/path/to/gonic/playlist.m3u' >&2
+if ! test (count $argv) -eq 3
+    echo 'usage: find /path/to/music -type f \( -name \'*.mp3\' -o -name \'*.flac\' \) | lastfm-to-gonic USER API_KEY FILTER_COLUMNS >/path/to/gonic/playlist.m3u' >&2
     exit 1
 end
 
 set user $argv[1]
 set api_key $argv[2]
+set filter_columns $argv[3]
 set per_page 100
 
 set buff (mktemp /tmp/gonic.XXXXXX)
@@ -31,8 +32,8 @@ function req_all_pages
 end
 
 function find_track_path
-    sed 's/[^[:alnum:]]/ /g' | unidecode | while read line
-        fzf -i --filter="$line" <$buff | head -n 1
+    sed 's/[^[:alnum:]]//g' | unidecode | while read line
+        fzf -i --filter="$line" -d / --with-nth "$filter_columns" <$buff | head -n 1
     end
 end
 
